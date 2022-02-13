@@ -1,6 +1,6 @@
 import src.famlinn as fml
-import examples.LeNetExample as LNE
+import examples.example_2022_02_12 as e
 
 
 if __name__ == '__main__':
-    LNE.fromNetExample()
+    e.hook_net_example()
