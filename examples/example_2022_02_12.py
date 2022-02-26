@@ -54,6 +54,7 @@ class NetF(nn.Module):
         x = self.fc1(x)
         x = self.relu3(x)
         x = self.fc2(x)
+        x = x.resharp()
         x = self.relu2(x)
         x = self.fc3(x)
         return x
@@ -92,7 +93,9 @@ def example():
     resFamlinn = famlinn.eval(arg)
     print("Famlinn: ", resFamlinn)
 
-
+# RESNET-50
+# U-NET
+# concat, add, reshape
 def hook_net_example():
     print("hookNet example: ")
     n = NetF()

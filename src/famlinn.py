@@ -60,7 +60,7 @@ class Storage:
 
 class Node:
 
-    def __init__(self, funct, res: int, args = [], storage: Storage = None):
+    def __init__(self, funct, res: int, args = [], storage: Storage = None, label=""):
         print("FuncIn: Init Node", file=sys.stderr)
         assert funct is not None, "Can not make Node with no function"
         assert storage is not None, "Can not make Node with no storage"
@@ -69,11 +69,12 @@ class Node:
         self.args = args
         self.res = res
         self.storage = storage
+        self.label = label
 
     def eval(self): self.res.write(self.funct([self.storage.get_container(i).read() for i in self.args]))
 
     def pprint(self):
-        print("Node from {} to {}".format(self.args, self.res.getId()))
+        print("Node from {} to {} ({})".format(self.args, self.res.getId(), self.label))
 
 
 # Format AutoML Iteratable Neural Network
@@ -85,11 +86,11 @@ class NeuralNetwork():
         self.storage = Storage()
         self.nodes = []
 
-    def add_layer(self, function, input_layers=[]) -> int:
+    def add_layer(self, function, input_layers=[], label="") -> int:
         res = self.storage.add_container()
         if len(input_layers) == 0:
             input_layers = [self.storage.inputId()]
-        node = Node(function, res, input_layers, self.storage)
+        node = Node(function, res, input_layers, self.storage, label=label)
         self.nodes.append(node)
         return res.getId()
 
@@ -109,7 +110,21 @@ class NeuralNetwork():
         for i in self.nodes: i.pprint()
 
 
+class TorchTensorCat(nn.Module):
+
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, tensors) -> torch.Tensor:
+        return torch.cat(tensors, dim=self.dim)
+
+
 class FAMLINN(NeuralNetwork):
+
+    def __init__(self):
+        self._graph_hook_map = {}
+        super().__init__()
 
     def from_net(self, net: nn.Module, arg: Any):
         h = hl.build_graph(net, arg)
@@ -157,9 +172,12 @@ class FAMLINN(NeuralNetwork):
 
     def hook_linear_net(self, net: nn.Module, arg):
         def add_hook(module):
+            print(module, file=sys.stderr)
             if isinstance(module, torch.Tensor):
                 return
-            module.register_forward_hook(self._generate_hook(module, net))
+            if isinstance(module, nn.Sequential):
+                return
+            module.register_forward_hook(self._generate_graph_hook(module, net))
 
         net.apply(add_hook)
         self.active_hook = True
@@ -170,5 +188,28 @@ class FAMLINN(NeuralNetwork):
         def __hook(_module, input, output):
             if self.active_hook and not isinstance(_module, net.__class__):
                 self.add_layer(lambda x: module(*x), [self.storage.outputId()])
+
+        return __hook
+
+    def _generate_graph_hook(self, module, net):
+        def __hook(_module, input, output):
+            res = []
+            #print("In", input)
+            #print("Out", output)
+            for i in self._graph_hook_map:
+                tensor = self._graph_hook_map[i]
+                input_list = list(input)
+                for inp in input_list:
+                    #if torch.eq(tensor, inp):
+                    try:
+                        if torch.all(tensor.eq(inp)):
+                            res.append(i)
+                            break
+                    except (RuntimeError, TypeError): pass
+            if self.active_hook and not isinstance(_module, net.__class__):
+                if len(res) == 0:
+                    res = [self.storage.outputId()]
+                next_container_id = self.add_layer(lambda x: module(*x), res, _module)
+                self._graph_hook_map[next_container_id] = output
 
         return __hook
