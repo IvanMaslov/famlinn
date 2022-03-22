@@ -1,17 +1,20 @@
 import examples.unet.example
+import examples.resnet.example
 import research.torch_onnx
 
 
-def r():
+def run_research():
     research.torch_onnx.do_research()
-    exit(0)
 
 
-def t():
+def run_unet():
     examples.unet.example.example()
-    exit(0)
+
+
+def run_resnet():
+    examples.resnet.example.example()
 
 
 if __name__ == '__main__':
-    # r()
-    t()
+    # run_unet()
+    run_resnet()

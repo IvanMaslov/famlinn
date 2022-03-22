@@ -1,14 +1,14 @@
 import torch
 
-import examples.unet.unet
+import examples.resnet.resnet
 import src.famlinn
 
 
 # https://github.com/mateuszbuda/brain-segmentation-pytorch
 def example():
-    n = examples.unet.unet.UNet()
+    n = examples.resnet.resnet.ResNet101()
 
-    arg = torch.rand((1, 3, 256, 256))
+    arg = torch.randn(1, 3, 224, 224)
     resOrig = n(arg)
     print("Original: ", resOrig)
 

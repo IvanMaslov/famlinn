@@ -125,6 +125,33 @@ class TorchTensorCat(nn.Module):
         return torch.cat(tensors, dim=self.dim)
 
 
+class TorchTensorId(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, tensor1: torch.Tensor) -> torch.Tensor:
+        return tensor1
+
+
+class TorchTensorAdd(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, tensor1: torch.Tensor, tensor2: torch.Tensor) -> torch.Tensor:
+        return tensor1 + tensor2
+
+
+class TorchTensorTo1D(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
+        return tensor.view(tensor.size(0), -1)
+
+
 class Evaluator:
     def __init__(self, module: nn.Module):
         self.module = module
@@ -227,7 +254,11 @@ class FAMLINN(NeuralNetwork):
         torch_id_to_container = {}
         for node in torch_graph.nodes():
             module = self._graph_hook_map[list_id]
+            print(node, module)
             list_id += 1
+            if isinstance(module, nn.AvgPool2d):
+                list_id -= 1
+                continue
 
             inp = [i.unique() for i in node.inputs()]
             outp = [i.unique() for i in node.outputs()]
@@ -238,15 +269,11 @@ class FAMLINN(NeuralNetwork):
                     input_containers.append(torch_id_to_container[i])
             if len(input_containers) == 0:
                 input_containers = [self.storage.outputId()]
-            #if isinstance(module, TorchTensorCat):
-            #    added_container = self.add_layer(lambda x: module((x[0], x[1])), input_containers, module)
-            #else:
-            #added_container = self.add_layer(lambda x: module(*x), input_containers, module)
             added_container = self.add_layer(Evaluator(module), input_containers, module)
             torch_id_to_container[output_container] = added_container
 
     def _generate_hook_last(self, module, net):
-        def __hook(_module, input, output):
+        def __hook(_module, _input, _output):
             if self.active_hook and not isinstance(_module, net.__class__):
                 self.add_layer(lambda x: module(*x), [self.storage.outputId()])
 
@@ -256,9 +283,9 @@ class FAMLINN(NeuralNetwork):
         global cnt
         cnt = 0
 
-        def __hook(_module, input, output):
+        def __hook(_module, _input, _output):
             global cnt
-            if self.active_hook and not isinstance(_module, net.__class__):
+            if self.active_hook and not isinstance(_module, net.__class__) and not hasattr(_module, 'famlinn_ignore'):
                 self._graph_hook_map[cnt] = _module
                 cnt += 1
 
@@ -269,7 +296,7 @@ class FAMLINN(NeuralNetwork):
             if not self.active_hook or isinstance(module, net.__class__):
                 return
 
-            print("Hooked ", module)
+            #print("Hooked ", module)
             #print("In", input)
             #print("Out", output)
 
