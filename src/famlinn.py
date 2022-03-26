@@ -133,6 +133,14 @@ class TorchTensorId(nn.Module):
     def forward(self, tensor1: torch.Tensor) -> torch.Tensor:
         return tensor1
 
+class TorchTensorSmartReshape(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, tensor1: torch.Tensor) -> torch.Tensor:
+        return tensor1.reshape(tensor1.size(0), -1)
+
 
 class TorchTensorAdd(nn.Module):
 
@@ -252,24 +260,44 @@ class FAMLINN(NeuralNetwork):
         torch_graph = torch.onnx._optimize_trace(trace, torch.onnx.OperatorExportTypes.ONNX)
         list_id = 0
         torch_id_to_container = {}
+        skip = 0
+        last_skip_input = 0
         for node in torch_graph.nodes():
-            module = self._graph_hook_map[list_id]
-            print(node, module)
-            list_id += 1
-            if isinstance(module, nn.AvgPool2d):
-                list_id -= 1
-                continue
-
             inp = [i.unique() for i in node.inputs()]
             outp = [i.unique() for i in node.outputs()]
             input_containers = []
             output_container = outp[0]
+
+            module = self._graph_hook_map[list_id]
+            print(node, module, list_id)
+            no_skip = True
+            if skip > 0:
+                skip -= 1
+                if skip == 0:
+                    inp = [last_skip_input]
+                    no_skip = False
+                else:
+                    continue
+            if no_skip and isinstance(module, nn.AvgPool2d):
+                last_skip_input = inp[0]
+                skip = 8
+                continue
+            if False and no_skip and isinstance(module, TorchTensorTo1D):
+                last_skip_input = inp[0]
+                skip = 1
+                continue
+            if no_skip and isinstance(module, TorchTensorSmartReshape):
+                last_skip_input = inp[0]
+                skip = 7
+                continue
+
             for i in inp:
                 if i in torch_id_to_container:
                     input_containers.append(torch_id_to_container[i])
             if len(input_containers) == 0:
                 input_containers = [self.storage.outputId()]
             added_container = self.add_layer(Evaluator(module), input_containers, module)
+            list_id += 1
             torch_id_to_container[output_container] = added_container
 
     def _generate_hook_last(self, module, net):
