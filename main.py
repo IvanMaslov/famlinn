@@ -1,6 +1,7 @@
 import examples.unet.example
 import examples.resnet.example
 import examples.vgg19.example
+import examples.dcgun.example
 import research.torch_onnx
 
 
@@ -20,7 +21,14 @@ def run_vgg19():
     examples.vgg19.example.example()
 
 
+def run_dcgun():
+    examples.dcgun.example.example_discriminator()
+    examples.dcgun.example.example_generator()
+
+
 if __name__ == '__main__':
     # run_unet()
-    run_resnet()
+    # run_resnet()
     # run_vgg19()
+    run_dcgun()
+

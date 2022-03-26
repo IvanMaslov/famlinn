@@ -160,6 +160,27 @@ class TorchTensorTo1D(nn.Module):
         return tensor.view(tensor.size(0), -1)
 
 
+class TorchTensorSmartView(nn.Module):
+
+    def __init__(self, arg):
+        super().__init__()
+        self.arg = arg
+
+    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
+        return tensor.view(self.arg)
+
+
+class TorchTensorSkipModule(nn.Module):
+
+    def __init__(self, module: nn.Module, skip: int):
+        super().__init__()
+        self.skip = skip
+        self.module = module
+
+    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
+        return self.module.forward(tensor)
+
+
 class Evaluator:
     def __init__(self, module: nn.Module):
         self.module = module
@@ -262,6 +283,7 @@ class FAMLINN(NeuralNetwork):
         torch_id_to_container = {}
         skip = 0
         last_skip_input = 0
+        last_skip_output = 0
         for node in torch_graph.nodes():
             inp = [i.unique() for i in node.inputs()]
             outp = [i.unique() for i in node.outputs()]
@@ -279,17 +301,26 @@ class FAMLINN(NeuralNetwork):
                 else:
                     continue
             if no_skip and isinstance(module, nn.AvgPool2d):
-                last_skip_input = inp[0]
+                last_skip_input = last_skip_output
                 skip = 8
                 continue
-            if False and no_skip and isinstance(module, TorchTensorTo1D):
-                last_skip_input = inp[0]
+            if no_skip and isinstance(module, nn.Dropout2d):
+                last_skip_input = last_skip_output
+                skip = 2
+                continue
+            if no_skip and isinstance(module, TorchTensorSmartView):
+                last_skip_input = last_skip_output
                 skip = 1
                 continue
             if no_skip and isinstance(module, TorchTensorSmartReshape):
-                last_skip_input = inp[0]
+                last_skip_input = last_skip_output
                 skip = 7
                 continue
+            if no_skip and isinstance(module, TorchTensorSkipModule):
+                last_skip_input = last_skip_output
+                skip = module.skip
+                continue
+            last_skip_output = output_container
 
             for i in inp:
                 if i in torch_id_to_container:
