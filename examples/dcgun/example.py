@@ -30,3 +30,5 @@ def example_generator():
     famlinn.pprint()
     resFamlinn = famlinn.eval(arg, verbose=False)
     print("Famlinn: ", resFamlinn)
+
+    famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\tmp.py')

@@ -4,7 +4,7 @@ import sys
 import torch
 import torch.nn as nn
 import hiddenlayer as hl
-from typing import Any, Tuple
+from typing import Any, Tuple, List
 
 
 class Container:
@@ -22,6 +22,10 @@ class Container:
     def read(self): return self.data
 
     def getId(self): return self.id
+
+    @staticmethod
+    def nullId():
+        Container.__NEXT_ID = 0
 
 
 class Storage:
@@ -82,11 +86,12 @@ class Node:
 
 
 # Format AutoML Iteratable Neural Network
-class NeuralNetwork():
+class NeuralNetwork:
 
     def __init__(self):
         print("FuncIn: Init NeuralNetwork", file=sys.stderr)
 
+        Container.nullId()
         self.storage = Storage()
         self.nodes = []
 
@@ -121,19 +126,15 @@ class TorchTensorCat(nn.Module):
         super().__init__()
         self.dim = dim
 
-    def forward(self, tensors: Tuple) -> torch.Tensor:
-        return torch.cat(tensors, dim=self.dim)
+    def forward(self, *tensor: torch.Tensor) -> torch.Tensor:
+        return torch.cat(tensor, dim=self.dim)
 
+    def __str__(self):
+        return "TorchTensorCat(" + str(self.dim) + ")"
 
-class TorchTensorId(nn.Module):
-
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, tensor1: torch.Tensor) -> torch.Tensor:
-        return tensor1
 
 class TorchTensorSmartReshape(nn.Module):
+
 
     def __init__(self):
         super().__init__()
@@ -169,6 +170,9 @@ class TorchTensorSmartView(nn.Module):
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor.view(self.arg)
 
+    def __str__(self):
+        return "TorchTensorSmartView(" + str(self.arg) + ")"
+
 
 class TorchTensorSkipModule(nn.Module):
 
@@ -180,18 +184,41 @@ class TorchTensorSkipModule(nn.Module):
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         return self.module.forward(tensor)
 
+    def __str__(self):
+        return "TorchTensorSkipModule(" + str(self.module) + ", " + str(self.skip) + ")"
+
 
 class Evaluator:
     def __init__(self, module: nn.Module):
         self.module = module
 
     def __call__(self, *args, **kwargs):
-        if isinstance(self.module, TorchTensorCat):
-            return self.module((args[0][0], args[0][1]))
+        #if isinstance(self.module, TorchTensorCat):
+            #return self.module((args[0][0], args[0][1]))
         return self.module(*args[0])
 
     def __str__(self):
         return str(self.module)
+
+
+class CodeGen:
+
+    def __init__(self, output=None):
+        self.output = output
+        self.result = []
+
+    def add_line(self, line: str):
+        self.result.append(line)
+
+    def add_lines(self, lines: List[str]):
+        self.result.extend(lines)
+
+    def tabulate_add(self, codegen):
+        self.result.extend(list(map(lambda x: "    " + x, codegen.result)))
+
+    def write(self):
+        with open(self.output, 'w') as file:
+            file.write("\n".join(self.result))
 
 
 class FAMLINN(NeuralNetwork):
@@ -327,7 +354,7 @@ class FAMLINN(NeuralNetwork):
                     input_containers.append(torch_id_to_container[i])
             if len(input_containers) == 0:
                 input_containers = [self.storage.outputId()]
-            added_container = self.add_layer(Evaluator(module), input_containers, module)
+            added_container = self.add_layer(Evaluator(module), input_containers, str(module))
             list_id += 1
             torch_id_to_container[output_container] = added_container
 
@@ -377,3 +404,49 @@ class FAMLINN(NeuralNetwork):
             self._graph_hook_map[next_container_id] = output
 
         return __hook
+
+    def export(self, output: str):
+        codegen = CodeGen(output)
+        self.generate(codegen)
+        codegen.write()
+
+    def generate(self, codegen: CodeGen) -> None:
+        codegen.add_lines([
+            "from torch.nn import *",
+            "from src.famlinn import *",
+            "",
+            "",
+            "class Net(nn.Module):",
+        ])
+        codegen.tabulate_add(self.generate_constructor())
+        codegen.add_line("")
+        codegen.tabulate_add(self.generate_forward())
+
+    def generate_constructor(self) -> CodeGen:
+        res_codegen = CodeGen()
+        res_codegen.add_lines([
+            "def __init__(self):",
+            "    super().__init__()",
+        ])
+        codegen = CodeGen()
+        for i, node in enumerate(self.nodes):
+            line = "self.{} = {}".format('node_' + str(i), node.label)
+            codegen.add_line(line)
+        res_codegen.tabulate_add(codegen)
+        return res_codegen
+
+    def generate_forward(self) -> CodeGen:
+        res_codegen = CodeGen()
+        res_codegen.add_lines([
+            "def forward(self, arg):",
+            "    res_0 = arg",
+        ])
+        codegen = CodeGen()
+        for i, node in enumerate(self.nodes):
+            args = '[' + ",".join(map(lambda x: 'res_{}'.format(x-1), node.args)) + ']'
+            res = node.res.getId()
+            line = "res_{} = self.node_{}(*{})  # {}".format(i+1, i, args, node.label)
+            codegen.add_line(line)
+        codegen.add_line("return res_{}".format(len(self.nodes)))
+        res_codegen.tabulate_add(codegen)
+        return res_codegen
