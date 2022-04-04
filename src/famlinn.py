@@ -1,4 +1,5 @@
 import abc
+import pickle
 import sys
 
 import torch
@@ -74,6 +75,14 @@ class Node:
         self.res = res
         self.storage = storage
         self.label = label
+
+    def get_params(self) -> bytes:
+        return pickle.dumps(self.funct.module.parameters())
+
+    def set_params(self, data: bytes) -> None:
+        best_params = pickle.loads(data)
+        for param_cur, param_best in zip(self.funct.module.parameters(), best_params):
+            param_cur.data = param_best.data
 
     def eval(self, verbose=False):
         arguments = [self.storage.get_container(i).read() for i in self.args]
@@ -193,8 +202,6 @@ class Evaluator:
         self.module = module
 
     def __call__(self, *args, **kwargs):
-        #if isinstance(self.module, TorchTensorCat):
-            #return self.module((args[0][0], args[0][1]))
         return self.module(*args[0])
 
     def __str__(self):
@@ -444,7 +451,6 @@ class FAMLINN(NeuralNetwork):
         codegen = CodeGen()
         for i, node in enumerate(self.nodes):
             args = '[' + ",".join(map(lambda x: 'res_{}'.format(x-1), node.args)) + ']'
-            res = node.res.getId()
             line = "res_{} = self.node_{}(*{})  # {}".format(i+1, i, args, node.label)
             codegen.add_line(line)
         codegen.add_line("return res_{}".format(len(self.nodes)))

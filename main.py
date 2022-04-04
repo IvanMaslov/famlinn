@@ -32,9 +32,9 @@ def run_gen():
 
 
 if __name__ == '__main__':
-    # run_unet()
+    run_unet()
     # run_resnet()
     # run_vgg19()
     # run_dcgun()
-    run_gen()
+    # run_gen()
 
