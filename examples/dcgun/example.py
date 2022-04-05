@@ -31,4 +31,5 @@ def example_generator():
     resFamlinn = famlinn.eval(arg, verbose=False)
     print("Famlinn: ", resFamlinn)
 
-    famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\tmp.py')
+    famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\tmp.py',
+                   'D:\\ITMO\\FAMLINN\\examples\\resources\\weights')

@@ -1,4 +1,5 @@
 import abc
+import base64
 import pickle
 import sys
 
@@ -77,7 +78,7 @@ class Node:
         self.label = label
 
     def get_params(self) -> bytes:
-        return pickle.dumps(self.funct.module.parameters())
+        return pickle.dumps(list(self.funct.module.parameters()))
 
     def set_params(self, data: bytes) -> None:
         best_params = pickle.loads(data)
@@ -412,15 +413,18 @@ class FAMLINN(NeuralNetwork):
 
         return __hook
 
-    def export(self, output: str):
-        codegen = CodeGen(output)
+    def export(self, outputSrc: str, outputWeigths: str):
+        codegen = CodeGen(outputSrc)
         self.generate(codegen)
         codegen.write()
+        self.write_weights(outputWeigths)
 
     def generate(self, codegen: CodeGen) -> None:
         codegen.add_lines([
             "from torch.nn import *",
             "from src.famlinn import *",
+            "import pickle",
+            "import base64",
             "",
             "",
             "class Net(nn.Module):",
@@ -428,6 +432,9 @@ class FAMLINN(NeuralNetwork):
         codegen.tabulate_add(self.generate_constructor())
         codegen.add_line("")
         codegen.tabulate_add(self.generate_forward())
+        codegen.add_line("")
+        codegen.tabulate_add(self.generate_read())
+        codegen.add_line("")
 
     def generate_constructor(self) -> CodeGen:
         res_codegen = CodeGen()
@@ -456,3 +463,29 @@ class FAMLINN(NeuralNetwork):
         codegen.add_line("return res_{}".format(len(self.nodes)))
         res_codegen.tabulate_add(codegen)
         return res_codegen
+
+    def generate_read(self) -> CodeGen:
+        res_codegen = CodeGen()
+        res_codegen.add_lines([
+            "def read_node(self, node, data):",
+            """    best_params = pickle.loads(base64.b64decode(data))""",
+            """    for param_cur, param_best in zip(node.parameters(), best_params):""",
+            """        param_cur.data = param_best.data""",
+            "",
+            "def read(self, weights_path):",
+            """    with open(weights_path, 'r') as file:""",
+            """        data = file.readlines()""",
+            """        for i, d in enumerate(data):""",
+        ])
+        for i, node in enumerate(self.nodes):
+            res_codegen.add_lines([
+                '            self.read_node(self.node_{}, d)'.format(i)
+            ])
+        return res_codegen
+
+    def write_weights(self, outputWeigths: str):
+        with open(outputWeigths, 'w') as file:
+            for node in self.nodes:
+                data = node.get_params()
+                file.write(str(base64.b64encode(data)))
+                file.write('\n')
