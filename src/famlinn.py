@@ -78,12 +78,12 @@ class Node:
         self.label = label
 
     def get_params(self) -> bytes:
-        return pickle.dumps(list(self.funct.module.parameters()))
+        res = pickle.dumps(self.funct.module.state_dict())
+        res = base64.b64encode(res)
+        res_test = base64.b64decode(res)
+        pickle.loads(res_test)
+        return res
 
-    def set_params(self, data: bytes) -> None:
-        best_params = pickle.loads(data)
-        for param_cur, param_best in zip(self.funct.module.parameters(), best_params):
-            param_cur.data = param_best.data
 
     def eval(self, verbose=False):
         arguments = [self.storage.get_container(i).read() for i in self.args]
@@ -423,7 +423,6 @@ class FAMLINN(NeuralNetwork):
         codegen.add_lines([
             "from torch.nn import *",
             "from src.famlinn import *",
-            "import pickle",
             "import base64",
             "",
             "",
@@ -469,8 +468,8 @@ class FAMLINN(NeuralNetwork):
         res_codegen.add_lines([
             "def read_node(self, node, data):",
             """    best_params = pickle.loads(base64.b64decode(data))""",
-            """    for param_cur, param_best in zip(node.parameters(), best_params):""",
-            """        param_cur.data = param_best.data""",
+            """    for param_best in best_params:""",
+            """        node.state_dict()[param_best] = best_params[param_best]""",
             "",
             "def read(self, weights_path):",
             """    with open(weights_path, 'r') as file:""",
@@ -484,8 +483,7 @@ class FAMLINN(NeuralNetwork):
         return res_codegen
 
     def write_weights(self, outputWeigths: str):
-        with open(outputWeigths, 'w') as file:
+        with open(outputWeigths, 'wb') as file:
             for node in self.nodes:
                 data = node.get_params()
-                file.write(str(base64.b64encode(data)))
-                file.write('\n')
+                file.write(data)

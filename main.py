@@ -1,9 +1,19 @@
+import torch
+
 import examples.unet.example
 import examples.resnet.example
 import examples.vgg19.example
 import examples.dcgun.example
 import examples.generated_example
 import research.torch_onnx
+
+
+def seed():
+    import numpy as np
+    np.random.seed(200)
+    import random as rnd
+    rnd.seed(200)
+    torch.manual_seed(200)
 
 
 def run_research():
@@ -32,9 +42,10 @@ def run_gen():
 
 
 if __name__ == '__main__':
+    seed()
     # run_unet()
     # run_resnet()
-    # run_vgg19()
+    run_vgg19()
     # run_dcgun()
-    run_gen()
+    # run_gen()
 
