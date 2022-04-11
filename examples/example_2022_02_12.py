@@ -93,6 +93,7 @@ def example():
     resFamlinn = famlinn.eval(arg)
     print("Famlinn: ", resFamlinn)
 
+
 # RESNET-50
 # U-NET
 # concat, add, reshape

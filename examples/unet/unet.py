@@ -5,6 +5,7 @@ import torch.nn as nn
 
 import src.famlinn
 
+
 class UNet(nn.Module):
 
     def __init__(self, in_channels=3, out_channels=1, init_features=32):
@@ -60,19 +61,19 @@ class UNet(nn.Module):
 
         dec4 = self.upconv4(bottleneck)
         dec4 = self.tc4(dec4, enc4)
-        #dec4 = torch.cat((dec4, enc4), dim=1)
+        # dec4 = torch.cat((dec4, enc4), dim=1)
         dec4 = self.decoder4(dec4)
         dec3 = self.upconv3(dec4)
         dec3 = self.tc3(dec3, enc3)
-        #dec3 = torch.cat((dec3, enc3), dim=1)
+        # dec3 = torch.cat((dec3, enc3), dim=1)
         dec3 = self.decoder3(dec3)
         dec2 = self.upconv2(dec3)
         dec2 = self.tc2(dec2, enc2)
-        #dec2 = torch.cat((dec2, enc2), dim=1)
+        # dec2 = torch.cat((dec2, enc2), dim=1)
         dec2 = self.decoder2(dec2)
         dec1 = self.upconv1(dec2)
         dec1 = self.tc1(dec1, enc1)
-        #dec1 = torch.cat((dec1, enc1), dim=1)
+        # dec1 = torch.cat((dec1, enc1), dim=1)
         dec1 = self.decoder1(dec1)
         res = self.conv(dec1)
         res = self.sig(res)

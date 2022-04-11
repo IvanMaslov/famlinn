@@ -54,7 +54,7 @@ def test_gen(seed, arg=torch.randn(1, 3, 256, 256)):
 
     famlinn = src.famlinn.FAMLINN()
     famlinn.hook_net(nRead, arg)
-    famlinn.pprint()
+    # famlinn.pprint()
     seed()
     resFamlinn = famlinn.eval(arg)
     # print("FamlinnRead: ", resFamlinn)

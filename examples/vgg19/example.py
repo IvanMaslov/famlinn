@@ -67,9 +67,9 @@ VGG_types = {
     ],
 }
 
+
 # https://github.com/mateuszbuda/brain-segmentation-pytorch
 def example():
-
     n = examples.vgg19.vgg19.VGG(VGG_types['VGG19'])
 
     arg = torch.randn(1, 3, 224, 224)
@@ -118,7 +118,7 @@ def test_gen(seed, arg=torch.randn(1, 3, 224, 224)):
 
     famlinn = src.famlinn.FAMLINN()
     famlinn.hook_net(nRead, arg)
-    famlinn.pprint()
+    # famlinn.pprint()
     seed()
     resFamlinn = famlinn.eval(arg)
     # print("FamlinnRead: ", resFamlinn)

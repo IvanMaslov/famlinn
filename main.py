@@ -44,6 +44,7 @@ def test():
     examples.vgg19.example.test(seed)
     examples.vgg19.example.test_gen(seed)
     examples.dcgun.example.test_discriminator(seed)
+    examples.dcgun.example.test_gen_discriminator(seed)
     examples.dcgun.example.test_generator(seed)
     examples.dcgun.example.test_gen_generator(seed)
 

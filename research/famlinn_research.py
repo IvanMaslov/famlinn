@@ -10,7 +10,6 @@ from typing import Any, Tuple, List
 
 
 class Container:
-
     __NEXT_ID = 0
 
     def __init__(self):
@@ -55,9 +54,11 @@ class Storage:
             self.outputContainer = cont
         return cont
 
-    def inputId(self): return self.inputContainer.getId()
+    def inputId(self):
+        return self.inputContainer.getId()
 
-    def outputId(self): return self.outputContainer.getId()
+    def outputId(self):
+        return self.outputContainer.getId()
 
     def pprint(self):
         print("Input container ", self.inputContainer.getId())
@@ -66,7 +67,7 @@ class Storage:
 
 class Node:
 
-    def __init__(self, funct, res, args = [], storage: Storage = None, label=""):
+    def __init__(self, funct, res, args=[], storage: Storage = None, label=""):
         print("FuncIn: Init Node", file=sys.stderr)
         assert funct is not None, "Can not make Node with no function"
         assert storage is not None, "Can not make Node with no storage"
@@ -146,7 +147,6 @@ class TorchTensorCat(nn.Module):
 
 
 class TorchTensorSmartReshape(nn.Module):
-
 
     def __init__(self):
         super().__init__()
@@ -266,7 +266,8 @@ class FAMLINN(NeuralNetwork):
         cnt = 0
         mapping = {}
 
-        def generate_f(gid): return lambda x: str(graph[gid]) + '\n' + str(x[0])
+        def generate_f(gid):
+            return lambda x: str(graph[gid]) + '\n' + str(x[0])
 
         while len(bfs) > 0:
             t = bfs[0]
@@ -299,10 +300,10 @@ class FAMLINN(NeuralNetwork):
         net(arg)
         self.active_hook = False
 
-
     def hook_net_hidden_layer(self, net: nn.Module, arg):
         global hooklist
         hooklist = []
+
         def add_hook(module):
             global hooklist
             print(module, file=sys.stderr)
@@ -397,9 +398,9 @@ class FAMLINN(NeuralNetwork):
             if not self.active_hook or isinstance(module, net.__class__):
                 return
 
-            #print("Hooked ", module)
-            #print("In", input)
-            #print("Out", output)
+            # print("Hooked ", module)
+            # print("In", input)
+            # print("Out", output)
 
             res = []
 
@@ -463,8 +464,8 @@ class FAMLINN(NeuralNetwork):
         ])
         codegen = CodeGen()
         for i, node in enumerate(self.nodes):
-            args = '[' + ",".join(map(lambda x: 'res_{}'.format(x-1), node.args)) + ']'
-            line = "res_{} = self.node_{}(*{})  # {}".format(i+1, i, args, node.label)
+            args = '[' + ",".join(map(lambda x: 'res_{}'.format(x - 1), node.args)) + ']'
+            line = "res_{} = self.node_{}(*{})  # {}".format(i + 1, i, args, node.label)
             codegen.add_line(line)
         codegen.add_line("return res_{}".format(len(self.nodes)))
         res_codegen.tabulate_add(codegen)
@@ -478,15 +479,15 @@ class FAMLINN(NeuralNetwork):
             """    for param_best in best_params:""",
             """        node.state_dict()[param_best] = best_params[param_best]""",
             "",
-            #"def read(self, weights_path):",
-            #"""    with open(weights_path, 'r') as file:""",
-            #"""        data = file.readlines()""",
-            #"""        for i, d in enumerate(data):""",
+            # "def read(self, weights_path):",
+            # """    with open(weights_path, 'r') as file:""",
+            # """        data = file.readlines()""",
+            # """        for i, d in enumerate(data):""",
             "def read(self, weights_path):",
         ])
         for i, node in enumerate(self.nodes):
             res_codegen.add_lines([
-                #'            self.read_node(self.node_{}, d)'.format(i)
+                # '            self.read_node(self.node_{}, d)'.format(i)
                 '        self.node_{} = torch.load(weights_path + \'Detailed\\\\node{}\')'.format(i, i)
             ])
         return res_codegen
@@ -497,7 +498,7 @@ class FAMLINN(NeuralNetwork):
         os.mkdir(outputWeigths + 'Detailed')
         for i, node in enumerate(self.nodes):
             node.save_params(outputWeigths + 'Detailed\\node' + str(i))
-        #with open(outputWeigths, 'wb') as file:
+        # with open(outputWeigths, 'wb') as file:
         #    for node in self.nodes:
         #        data = node.get_params()
         #        file.write(data)

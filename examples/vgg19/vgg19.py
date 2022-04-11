@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 import src.famlinn
 
+
 class VGG(nn.Module):
     def __init__(
             self,
@@ -27,7 +28,7 @@ class VGG(nn.Module):
 
     def forward(self, x):
         x = self.convs(x)
-        #x = x.reshape(x.size(0), -1)
+        # x = x.reshape(x.size(0), -1)
         x = self.rshp(x)
         x = self.fcs(x)
         return x

@@ -51,7 +51,7 @@ class Bottleneck(nn.Module):
         if self.downsampling:
             residual = self.downsample(x)
 
-        #out += residual
+        # out += residual
         out = self.tensorAdd(out, residual)
         out = self.relu(out)
         return out
