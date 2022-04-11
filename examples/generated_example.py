@@ -10,8 +10,8 @@ def example():
     n.read('D:\\ITMO\\FAMLINN\\examples\\resources\\weights')
 
     #arg = torch.randn(1, 3, 256, 256)
-    arg = torch.randn(1, 3, 224, 224)
-    #arg = torch.randn(10, 100)
+    #arg = torch.randn(1, 3, 224, 224)
+    arg = torch.randn(10, 100)
     resOrig = n(arg)
     print("Original: ", resOrig)
 
