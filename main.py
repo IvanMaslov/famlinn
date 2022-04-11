@@ -13,6 +13,7 @@ def seed():
     import random as rnd
     rnd.seed(200)
     torch.manual_seed(200)
+    torch.cuda.manual_seed(200)
 
 
 def run_research():
@@ -37,16 +38,20 @@ def run_dcgun():
 
 
 def test():
-    examples.unet.example.test(seed)
-    examples.unet.example.test_gen(seed)
-    examples.resnet.example.test(seed)
-    examples.resnet.example.test_gen(seed)
-    examples.vgg19.example.test(seed)
-    examples.vgg19.example.test_gen(seed)
-    examples.dcgun.example.test_discriminator(seed)
-    examples.dcgun.example.test_gen_discriminator(seed)
-    examples.dcgun.example.test_generator(seed)
-    examples.dcgun.example.test_gen_generator(seed)
+    arg = torch.randn(1, 3, 256, 256)
+    examples.unet.example.test(seed, arg)
+    examples.unet.example.test_gen(seed, arg)
+    arg = torch.randn(1, 3, 224, 224)
+    examples.resnet.example.test(seed, arg)
+    examples.resnet.example.test_gen(seed, arg)
+    examples.vgg19.example.test(seed, arg)
+    examples.vgg19.example.test_gen(seed, arg)
+    arg = torch.randn(1, 1, 28, 28)
+    examples.dcgun.example.test_discriminator(seed, arg)
+    examples.dcgun.example.test_gen_discriminator(seed, arg)
+    arg = torch.randn(10, 100)
+    examples.dcgun.example.test_generator(seed, arg)
+    examples.dcgun.example.test_gen_generator(seed, arg)
 
 
 if __name__ == '__main__':
