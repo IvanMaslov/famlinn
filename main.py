@@ -4,7 +4,6 @@ import examples.unet.example
 import examples.resnet.example
 import examples.vgg19.example
 import examples.dcgun.example
-import examples.generated_example
 import research.torch_onnx
 
 
@@ -37,15 +36,18 @@ def run_dcgun():
     examples.dcgun.example.example_generator()
 
 
-def run_gen():
-    examples.generated_example.example()
+def test():
+    examples.unet.example.test(seed)
+    examples.unet.example.test_gen(seed)
+    examples.resnet.example.test(seed)
+    examples.resnet.example.test_gen(seed)
+    examples.vgg19.example.test(seed)
+    examples.vgg19.example.test_gen(seed)
+    examples.dcgun.example.test_discriminator(seed)
+    examples.dcgun.example.test_generator(seed)
+    examples.dcgun.example.test_gen_generator(seed)
 
 
 if __name__ == '__main__':
-    seed()
-    # run_unet()
-    # run_resnet()
-    # run_vgg19()
-    # run_dcgun()
-    run_gen()
+    test()
 
