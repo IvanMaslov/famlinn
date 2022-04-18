@@ -1,6 +1,7 @@
 import torch
 
 import examples.unet.example
+import examples.lenet.example
 import examples.resnet.example
 import examples.vgg19.example
 import examples.dcgun.example
@@ -38,6 +39,9 @@ def run_dcgun():
 
 
 def test():
+    arg = torch.randn(1, 1, 32, 32)
+    examples.lenet.example.test(seed, arg)
+    examples.lenet.example.test_gen(seed, arg)
     arg = torch.randn(1, 3, 256, 256)
     examples.unet.example.test(seed, arg)
     examples.unet.example.test_gen(seed, arg)

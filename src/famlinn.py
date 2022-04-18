@@ -145,6 +145,19 @@ class TorchTensorSmartReshape(nn.Module):
         return tensor1.reshape(tensor1.size(0), -1)
 
 
+class TorchTensorFlatten(nn.Module):
+
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
+        return torch.flatten(tensor, self.dim)
+
+    def __str__(self):
+        return "TorchTensorFlatten(" + str(self.dim) + ")"
+
+
 class TorchTensorAdd(nn.Module):
 
     def __init__(self):

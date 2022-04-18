@@ -2,39 +2,26 @@ import torch
 
 import examples.unet.unet
 import src.famlinn
-
-
-# https://github.com/mateuszbuda/brain-segmentation-pytorch
-def example():
-    n = examples.unet.unet.UNet()
-
-    arg = torch.rand((1, 3, 256, 256))
-    resOrig = n(arg)
-    print("Original: ", resOrig)
-
-    famlinn = src.famlinn.FAMLINN()
-    famlinn.hook_net(n, arg)
-    famlinn.pprint()
-    resFamlinn = famlinn.eval(arg)
-    print("Famlinn: ", resFamlinn)
-
-    famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\tmp.py',
-                   'D:\\ITMO\\FAMLINN\\examples\\resources\\weights')
+from src.utils import Perf
 
 
 def test(seed, arg=torch.randn(1, 3, 256, 256)):
     n = examples.unet.unet.UNet()
 
     seed()
-    resOrig = n(arg)
+    with Perf("EVAL_ORIGINAL(unet)"):
+        resOrig = n(arg)
 
     famlinn = src.famlinn.FAMLINN()
-    famlinn.hook_net(n, arg)
-    famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\src.py',
-                   'D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\weights')
+    with Perf("MAKE_FAMLINN(unet)"):
+        famlinn.hook_net(n, arg)
+    with Perf("SAVE_FAMLINN(unet)"):
+        famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\src.py',
+                       'D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\weights')
 
     seed()
-    resFamlinn = famlinn.eval(arg)
+    with Perf("CALC_FAMLINN(unet)"):
+        resFamlinn = famlinn.eval(arg)
     assert torch.equal(resOrig, resFamlinn)
     print("TEST_CONVERT_UNET: OK(", resOrig.view(-1)[0], resFamlinn.view(-1)[0], ')')
 
