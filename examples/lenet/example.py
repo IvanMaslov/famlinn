@@ -18,6 +18,7 @@ def test(seed, arg=torch.randn(1, 1, 32, 32)):
         famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\lenet\\src.py',
                        'D:\\ITMO\\FAMLINN\\examples\\resources\\lenet\\weights')
 
+    torch.save(n, 'D:\\ITMO\\FAMLINN\\examples\\resources\\lenet\\original')
     seed()
     with Perf("CALC_FAMLINN(lenet)"):
         resFamlinn = famlinn.eval(arg)

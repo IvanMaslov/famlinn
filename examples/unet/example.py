@@ -19,6 +19,7 @@ def test(seed, arg=torch.randn(1, 3, 256, 256)):
         famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\src.py',
                        'D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\weights')
 
+    torch.save(n, 'D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\original')
     seed()
     with Perf("CALC_FAMLINN(unet)"):
         resFamlinn = famlinn.eval(arg)
