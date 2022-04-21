@@ -59,8 +59,6 @@ class LeNet(nn.Module):
         x = self.mp2(self.rl2(self.conv2(x)))
         x = self.flat(x)  # flatten all dimensions except the batch dimension
         x = self.fc1(x)
-        x = self.rl3(x)
-        x = self.fc2(x)
-        x = self.rl4(x)
-        x = self.fc3(x)
+        x = self.fc2(self.rl3(x))
+        x = self.fc3(self.rl4(x))
         return x
