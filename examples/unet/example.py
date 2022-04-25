@@ -49,3 +49,23 @@ def test_gen(seed, arg=torch.randn(1, 3, 256, 256)):
     # assert torch.equal(resOrig, resR), str(resOrig) + str(resR)
     assert torch.equal(resR, resFamlinn), str(resR) + str(resFamlinn)
     print("TEST_WEIGHTS_UNET: OK(", resOrig.view(-1)[0], resR.view(-1)[0], resFamlinn.view(-1)[0], ')')
+
+
+def bench_onnx(arg):
+    n = examples.unet.unet.UNet()
+    with Perf("ONNX(unet)"):
+        import onnx
+        import onnxruntime
+        pth = 'D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\onnx'
+        with Perf("ONNX_SAVE(unet)"):
+            nOnnx = torch.onnx.export(n, arg, pth)
+        with Perf("ONNX_LOAD_CHECK(unet)"):
+            nOnnx = onnx.load(pth)
+            onnx.checker.check_model(nOnnx)
+        with Perf("ONNX_LOAD_RUN(unet)"):
+            ort_session = onnxruntime.InferenceSession(pth)
+            def to_numpy(tensor):
+                return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
+            ort_inputs = {ort_session.get_inputs()[0].name: to_numpy(arg)}
+            with Perf("ONNX_LOAD_RUN_ONLY(unet)"):
+                ort_outs = ort_session.run(None, ort_inputs)
