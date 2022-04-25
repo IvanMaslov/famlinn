@@ -265,49 +265,23 @@ class FAMLINN(NeuralNetwork):
         for hook in hook_list:
             hook.remove()
 
-        trace, out = torch.jit._get_trace_graph(net, arg)
-        torch_graph = torch.onnx._optimize_trace(trace, torch.onnx.OperatorExportTypes.ONNX)
+        #trace, out = torch.jit._get_trace_graph(net, arg)
+        #torch_graph = torch.onnx._optimize_trace(trace, torch.onnx.OperatorExportTypes.ONNX)
+        import onnx
+        nOnnx = torch.onnx.export(net, arg, 'tmp.onnx')
+        model = onnx.load_model('tmp.onnx')
+        nodes = [(node.input, node.output, node.name) for node in model.graph.node]
+        import pprint
+        pprint.pprint(nodes)
         list_id = 0
         torch_id_to_container = {}
-        skip = 0
-        last_skip_input = 0
-        last_skip_output = 0
-        for node in torch_graph.nodes():
-            inp = [i.unique() for i in node.inputs()]
-            outp = [i.unique() for i in node.outputs()]
+        for node in nodes:
+            inp = node[0]
+            outp = node[1]
             input_containers = []
             output_container = outp[0]
 
             module = self._graph_hook_map[list_id]
-            no_skip = True
-            if skip > 0:
-                skip -= 1
-                if skip == 0:
-                    inp = [last_skip_input]
-                    no_skip = False
-                else:
-                    continue
-            if no_skip and isinstance(module, nn.AvgPool2d):
-                last_skip_input = last_skip_output
-                skip = 8
-                continue
-            if no_skip and isinstance(module, nn.Dropout2d):
-                last_skip_input = last_skip_output
-                skip = 2
-                continue
-            if no_skip and isinstance(module, TorchTensorSmartView):
-                last_skip_input = last_skip_output
-                skip = 1
-                continue
-            if no_skip and isinstance(module, TorchTensorSmartReshape):
-                last_skip_input = last_skip_output
-                skip = 7
-                continue
-            if no_skip and isinstance(module, TorchTensorSkipModule):
-                last_skip_input = last_skip_output
-                skip = module.skip
-                continue
-            last_skip_output = output_container
 
             for i in inp:
                 if i in torch_id_to_container:
@@ -317,6 +291,7 @@ class FAMLINN(NeuralNetwork):
             added_container = self.add_layer(Evaluator(module), input_containers, str(module))
             list_id += 1
             torch_id_to_container[output_container] = added_container
+        self.pprint()
 
     def _generate_hook_list(self, module, net):
         global cnt

@@ -61,7 +61,16 @@ def bench_onnx(arg):
             nOnnx = torch.onnx.export(n, arg, pth)
         with Perf("ONNX_LOAD_CHECK(unet)"):
             nOnnx = onnx.load(pth)
+            model = onnx.load_model(pth)
             onnx.checker.check_model(nOnnx)
+            nodes_input = [node.name for node in model.graph.input]
+            nodes_output = [node.name for node in model.graph.output]
+            nodes_mid = [(node.input, node.output, node.name) for node in model.graph.node]
+            import pprint
+            pprint.pprint(nodes_input)
+            pprint.pprint(nodes_output)
+            pprint.pprint(nodes_mid)
+            print(onnx.helper.printable_graph(model.graph))
         with Perf("ONNX_LOAD_RUN(unet)"):
             ort_session = onnxruntime.InferenceSession(pth)
             def to_numpy(tensor):
