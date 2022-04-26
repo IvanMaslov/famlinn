@@ -56,9 +56,9 @@ class Generator(nn.Module):
 
         self.sview = src.famlinn.TorchTensorSmartView((-1, 256, 7, 7))
 
-    def forward(self, input_tensor):
+    def forward(self, x):
         """Forward pass; map latent vectors to samples."""
-        intermediate = self.linear1(input_tensor)
+        intermediate = self.linear1(x)
         intermediate = self.bn1d1(intermediate)
         intermediate = self.leaky_relu(intermediate)
 
@@ -114,9 +114,9 @@ class Discriminator(nn.Module):
 
         self.sview = src.famlinn.TorchTensorSmartView((-1, 128 * 7 * 7))
 
-    def forward(self, input_tensor):
+    def forward(self, x):
         """Forward pass; map samples to confidence they are real [0, 1]."""
-        intermediate = self.conv1(input_tensor)
+        intermediate = self.conv1(x)
         intermediate = self.leaky_relu(intermediate)
         intermediate = self.dropout_2d(intermediate)
 

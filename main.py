@@ -47,9 +47,9 @@ def test():
     examples.unet.example.test_gen(seed, arg)
     examples.unet.example.bench_onnx(arg)
     arg = torch.randn(1, 3, 224, 224)
-    examples.resnet.example.test(seed, arg)
-    examples.resnet.example.test_gen(seed, arg)
-    examples.resnet.example.bench_onnx(arg)
+    #examples.resnet.example.test(seed, arg)
+    #examples.resnet.example.test_gen(seed, arg)
+    #examples.resnet.example.bench_onnx(arg)
     examples.vgg19.example.test(seed, arg)
     examples.vgg19.example.test_gen(seed, arg)
     arg = torch.randn(1, 1, 28, 28)
@@ -58,9 +58,6 @@ def test():
     arg = torch.randn(10, 100)
     examples.dcgun.example.test_generator(seed, arg)
     examples.dcgun.example.test_gen_generator(seed, arg)
-
-    arg = torch.randn(1, 3, 256, 256)
-    arg = torch.randn(1, 3, 224, 224)
 
 
 if __name__ == '__main__':

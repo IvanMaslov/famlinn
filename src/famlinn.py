@@ -1,4 +1,5 @@
 # FAMLINN
+import re
 
 import torch
 import torch.nn as nn
@@ -234,76 +235,80 @@ class CodeGen:
             file.write("\n".join(self.result))
 
 
-global hook_list
-
-
 class FAMLINN(NeuralNetwork):
 
     def __init__(self):
         self._graph_hook_map = {}
         super().__init__()
 
+    def isSampleModule(self, module: nn.Module):
+        return (isinstance(module, Evaluator)
+                or isinstance(module, TorchTensorTo1D)
+                or isinstance(module, TorchTensorSkipModule)
+                or isinstance(module, TorchTensorCat)
+                or isinstance(module, TorchTensorAdd)
+                or isinstance(module, TorchTensorFlatten)
+                or isinstance(module, TorchTensorSmartView)
+                or isinstance(module, TorchTensorSmartReshape)
+                or isinstance(module, nn.Conv2d)
+                or isinstance(module, nn.ConvTranspose2d)
+                or isinstance(module, nn.BatchNorm1d)
+                or isinstance(module, nn.BatchNorm2d)
+                or isinstance(module, nn.Linear)
+                or isinstance(module, nn.AvgPool1d)
+                or isinstance(module, nn.AvgPool2d)
+                or isinstance(module, nn.AvgPool3d)
+                or isinstance(module, nn.AdaptiveAvgPool1d)
+                or isinstance(module, nn.AdaptiveAvgPool2d)
+                or isinstance(module, nn.AdaptiveAvgPool3d)
+                or isinstance(module, nn.MaxPool1d)
+                or isinstance(module, nn.MaxPool2d)
+                or isinstance(module, nn.MaxPool3d)
+                or isinstance(module, nn.FractionalMaxPool2d)
+                or isinstance(module, nn.FractionalMaxPool3d)
+                or isinstance(module, nn.Dropout)
+                or isinstance(module, nn.Dropout2d)
+                or isinstance(module, nn.ReLU)
+                or isinstance(module, nn.LeakyReLU)
+                or isinstance(module, nn.Sigmoid)
+                or isinstance(module, nn.Tanh)
+                or isinstance(module, nn.Flatten)
+
+                )
+
+    def _convert(self, net: nn.Module, argValues, argStorage = None):
+        if self.isSampleModule(net):
+            self.add_layer(Evaluator(net),
+                           [self.storage.output_id()] if argStorage is None else argStorage,
+                           str(net))
+            return
+        trace = torch.jit.trace(net, *argValues).graph
+        nodes_map = { '%x': self.storage.output_id()}
+        result_map = { '%x': argValues[0] }
+        name_map = {}
+        for node in trace.nodes():
+            used_variables = re.findall('%[0-9a-zA-Z_]+', str(node))
+            if re.match('.*GetAttr.*', str(node)):
+                name_map[used_variables[0][1:]] = re.findall('name=\".*\"', str(node))[0][6:-1]
+            if re.match('%[0-9]+', used_variables[0]):
+                submodule_name = used_variables[1][1:]
+                for idx, m in net.named_children():
+                    if idx == name_map[submodule_name]:
+                        inps = used_variables[2:]
+                        outs = used_variables[0]
+                        if len(inps) == 1 and inps[0] == '%x' or inps[0] == '%input' or inps[0] == '%arg':
+                            argv = argValues
+                            args = None
+                        else:
+                            argv = [result_map[i] for i in inps]
+                            args = [nodes_map[i] for i in inps]
+                        self._convert(m, argv, args)
+                        nodes_map[outs] = self.storage.output_id()
+                        result_map[outs] = m(*argv)
+
     def hook_net(self, net: nn.Module, arg):
-        return self.hook_net_hidden_layer(net, arg)
-
-    def hook_net_hidden_layer(self, net: nn.Module, arg):
-        global hook_list
-        hook_list = []
-
-        def add_hook(module):
-            global hook_list
-            if isinstance(module, torch.Tensor):
-                return
-            if isinstance(module, nn.Sequential):
-                return
-            hook_list.append(module.register_forward_hook(self._generate_hook_list(module, net)))
-
-        net.apply(add_hook)
-        self.active_hook = True
-        net(arg)
-        self.active_hook = False
-        for hook in hook_list:
-            hook.remove()
-
-        #trace, out = torch.jit._get_trace_graph(net, arg)
-        #torch_graph = torch.onnx._optimize_trace(trace, torch.onnx.OperatorExportTypes.ONNX)
-        import onnx
-        nOnnx = torch.onnx.export(net, arg, 'tmp.onnx')
-        model = onnx.load_model('tmp.onnx')
-        nodes = [(node.input, node.output, node.name) for node in model.graph.node]
-        import pprint
-        pprint.pprint(nodes)
-        list_id = 0
-        torch_id_to_container = {}
-        for node in nodes:
-            inp = node[0]
-            outp = node[1]
-            input_containers = []
-            output_container = outp[0]
-
-            module = self._graph_hook_map[list_id]
-
-            for i in inp:
-                if i in torch_id_to_container:
-                    input_containers.append(torch_id_to_container[i])
-            if len(input_containers) == 0:
-                input_containers = [self.storage.output_id()]
-            added_container = self.add_layer(Evaluator(module), input_containers, str(module))
-            list_id += 1
-            torch_id_to_container[output_container] = added_container
+        self._convert(net, [arg])
         self.pprint()
-
-    def _generate_hook_list(self, module, net):
-        global cnt
-        cnt = 0
-
-        def __hook(_module, _input, _output):
-            global cnt
-            if self.active_hook and not isinstance(_module, net.__class__) and not hasattr(_module, 'famlinn_ignore'):
-                self._graph_hook_map[cnt] = _module
-                cnt += 1
-
-        return __hook
 
     def export(self, output_src: str, output_weights: str):
         codegen = CodeGen(output_src)
