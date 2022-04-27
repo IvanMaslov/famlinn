@@ -80,9 +80,14 @@ class Node:
     def save_params(self, path: str):
         torch.save(self.funct.module, path)
 
-    def eval(self):
+    def eval(self, verbose=False):
         arguments = [self.storage.get_container(i).read() for i in self.args]
-        self.res.write(self.funct(arguments))
+        if verbose:
+            print(arguments)
+        result = self.funct(arguments)
+        if verbose:
+            print(result)
+        self.res.write(result)
 
     def pprint(self):
         print("Node from {} to {} ({})".format(self.args, self.res.get_id(), self.label))
@@ -114,7 +119,13 @@ class NeuralNetwork:
     def eval(self, data):
         self.storage.get_container(self.storage.input_id()).write(data)
         for i in self.nodes:
-            i.eval()
+            try:
+                i.eval()
+            except BaseException as e:
+                print("Error in FAMLINN::NeuralNetwork.eval", file=sys.stderr)
+                print(str(e), file=sys.stderr)
+                i.pprint()  # TODO: REMOVE
+                raise e
         return self.storage.get_container(self.storage.output_id()).read()
 
     def pprint(self):
@@ -209,7 +220,13 @@ class Evaluator:
         self.module = module
 
     def __call__(self, *args, **kwargs):
-        return self.module(*args[0])
+        try:
+            return self.module(*args[0])
+        except BaseException as e:
+            print("Error in FAMLINN::Evaluator", file=sys.stderr)
+            print(str(e), file=sys.stderr)
+            print(self, file=sys.stderr)
+            raise e
 
     def __str__(self):
         return str(self.module)
@@ -273,7 +290,6 @@ class FAMLINN(NeuralNetwork):
                 or isinstance(module, nn.Sigmoid)
                 or isinstance(module, nn.Tanh)
                 or isinstance(module, nn.Flatten)
-
                 )
 
     def _convert(self, net: nn.Module, argValues, argStorage = None):
@@ -283,11 +299,13 @@ class FAMLINN(NeuralNetwork):
                            str(net))
             return
         trace = torch.jit.trace(net, *argValues).graph
-        nodes_map = { '%x': self.storage.output_id()}
-        result_map = { '%x': argValues[0] }
+        # print(trace)
+        nodes_map = {}
+        result_map = {}
         name_map = {}
+        firstArg = None
         for node in trace.nodes():
-            used_variables = re.findall('%[0-9a-zA-Z_]+', str(node))
+            used_variables = re.findall('%[0-9a-zA-Z_.]+', str(node))
             if re.match('.*GetAttr.*', str(node)):
                 name_map[used_variables[0][1:]] = re.findall('name=\".*\"', str(node))[0][6:-1]
             if re.match('%[0-9]+', used_variables[0]):
@@ -296,9 +314,13 @@ class FAMLINN(NeuralNetwork):
                     if idx == name_map[submodule_name]:
                         inps = used_variables[2:]
                         outs = used_variables[0]
-                        if len(inps) == 1 and inps[0] == '%x' or inps[0] == '%input' or inps[0] == '%arg':
+                        if firstArg is None:
+                            firstArg = inps[0]
+                            result_map[firstArg] = argValues[0]
+                            nodes_map[firstArg] = self.storage.output_id() if argStorage is None else argStorage[0]
+                            # print("Node first ", firstArg, nodes_map[firstArg])
                             argv = argValues
-                            args = None
+                            args = [nodes_map[firstArg]]
                         else:
                             argv = [result_map[i] for i in inps]
                             args = [nodes_map[i] for i in inps]
