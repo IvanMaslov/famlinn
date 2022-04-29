@@ -54,11 +54,6 @@ def test_generator(seed, arg=torch.randn(10, 100)):
 
 def test_gen_generator(seed, arg=torch.randn(10, 100)):
     import examples.resources.gGun.src
-    n = examples.dcgun.dcgun.Generator()
-    seed()
-    resOrig = n(arg)
-    # print("Original: ", resOrig)
-
     nRead = examples.resources.gGun.src.Net()
     nRead.read('D:\\ITMO\\FAMLINN\\examples\\resources\\gGun\\weights')
     seed()
@@ -71,9 +66,8 @@ def test_gen_generator(seed, arg=torch.randn(10, 100)):
     seed()
     resFamlinn = famlinn.eval(arg)
     # print("FamlinnRead: ", resFamlinn)
-    # assert torch.equal(resOrig, resR), str(resOrig) + str(resR)
     assert torch.equal(resR, resFamlinn), str(resR) + str(resFamlinn)
-    print("TEST_WEIGHTS_G_GUN: OK(", resOrig.view(-1)[0], resR.view(-1)[0], resFamlinn.view(-1)[0], ')')
+    print("TEST_WEIGHTS_G_GUN: OK(", resR.view(-1)[0], resFamlinn.view(-1)[0], ')')
 
 
 def test_discriminator(seed, arg=torch.randn(1, 1, 28, 28)):
@@ -95,11 +89,6 @@ def test_discriminator(seed, arg=torch.randn(1, 1, 28, 28)):
 
 def test_gen_discriminator(seed, arg=torch.rand(1, 1, 28, 28)):
     import examples.resources.dGun.src
-    n = examples.dcgun.dcgun.Discriminator()
-    seed()
-    resOrig = n(arg)
-    # print("Original: ", resOrig)
-
     nRead = examples.resources.dGun.src.Net()
     nRead.read('D:\\ITMO\\FAMLINN\\examples\\resources\\dGun\\weights')
     seed()
@@ -112,6 +101,5 @@ def test_gen_discriminator(seed, arg=torch.rand(1, 1, 28, 28)):
     seed()
     resFamlinn = famlinn.eval(arg)
     # print("FamlinnRead: ", resFamlinn)
-    # assert torch.equal(resOrig, resR), str(resOrig) + str(resR)
     assert torch.equal(resR, resFamlinn), str(resR) + str(resFamlinn)
-    print("TEST_WEIGHTS_D_GUN: OK(", resOrig.view(-1)[0], resR.view(-1)[0], resFamlinn.view(-1)[0], ')')
+    print("TEST_WEIGHTS_D_GUN: OK(", resR.view(-1)[0], resFamlinn.view(-1)[0], ')')

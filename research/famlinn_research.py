@@ -502,3 +502,10 @@ class FAMLINN(NeuralNetwork):
         #    for node in self.nodes:
         #        data = node.get_params()
         #        file.write(data)
+
+
+# ONNX graph constructor
+# https://towardsdatascience.com/creating-editing-and-merging-onnx-pipelines-897e55e98bb0
+
+# PyTorch docs - nn.Module as constructor
+# https://pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html

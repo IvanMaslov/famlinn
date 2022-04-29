@@ -28,11 +28,6 @@ def test(seed, arg=torch.randn(1, 1, 32, 32)):
 
 def test_gen(seed, arg=torch.randn(1, 1, 32, 32)):
     import examples.resources.lenet.src
-    n = examples.lenet.lenet.LeNet()
-    seed()
-    resOrig = n(arg)
-    # print("Original: ", resOrig)
-
     nRead = examples.resources.lenet.src.Net()
     nRead.read('D:\\ITMO\\FAMLINN\\examples\\resources\\lenet\\weights')
     seed()
@@ -45,6 +40,5 @@ def test_gen(seed, arg=torch.randn(1, 1, 32, 32)):
     seed()
     resFamlinn = famlinn.eval(arg)
     # print("FamlinnRead: ", resFamlinn)
-    # assert torch.equal(resOrig, resR), str(resOrig) + str(resR)
     assert torch.equal(resR, resFamlinn), str(resR) + str(resFamlinn)
-    print("TEST_WEIGHTS_LENET: OK(", resOrig.view(-1)[0], resR.view(-1)[0], resFamlinn.view(-1)[0], ')')
+    print("TEST_WEIGHTS_LENET: OK(", resR.view(-1)[0], resFamlinn.view(-1)[0], ')')

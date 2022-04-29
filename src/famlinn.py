@@ -135,7 +135,11 @@ class NeuralNetwork:
             i.pprint()
 
 
-class TorchTensorCat(nn.Module):
+class FamlinnTensorOperation(nn.Module):
+    pass
+
+
+class TorchTensorCat(FamlinnTensorOperation):
 
     def __init__(self, dim):
         super().__init__()
@@ -148,7 +152,7 @@ class TorchTensorCat(nn.Module):
         return "TorchTensorCat(" + str(self.dim) + ")"
 
 
-class TorchTensorSmartReshape(nn.Module):
+class TorchTensorSmartReshape(FamlinnTensorOperation):
 
     def __init__(self):
         super().__init__()
@@ -157,7 +161,7 @@ class TorchTensorSmartReshape(nn.Module):
         return tensor1.reshape(tensor1.size(0), -1)
 
 
-class TorchTensorFlatten(nn.Module):
+class TorchTensorFlatten(FamlinnTensorOperation):
 
     def __init__(self, dim):
         super().__init__()
@@ -170,7 +174,7 @@ class TorchTensorFlatten(nn.Module):
         return "TorchTensorFlatten(" + str(self.dim) + ")"
 
 
-class TorchTensorAdd(nn.Module):
+class TorchTensorAdd(FamlinnTensorOperation):
 
     def __init__(self):
         super().__init__()
@@ -179,7 +183,7 @@ class TorchTensorAdd(nn.Module):
         return tensor1 + tensor2
 
 
-class TorchTensorTo1D(nn.Module):
+class TorchTensorTo1D(FamlinnTensorOperation):
 
     def __init__(self):
         super().__init__()
@@ -188,7 +192,7 @@ class TorchTensorTo1D(nn.Module):
         return tensor.view(tensor.size(0), -1)
 
 
-class TorchTensorSmartView(nn.Module):
+class TorchTensorSmartView(FamlinnTensorOperation):
 
     def __init__(self, arg):
         super().__init__()
@@ -199,20 +203,6 @@ class TorchTensorSmartView(nn.Module):
 
     def __str__(self):
         return "TorchTensorSmartView(" + str(self.arg) + ")"
-
-
-class TorchTensorSkipModule(nn.Module):
-
-    def __init__(self, module: nn.Module, skip: int):
-        super().__init__()
-        self.skip = skip
-        self.module = module
-
-    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
-        return self.module.forward(tensor)
-
-    def __str__(self):
-        return "TorchTensorSkipModule(" + str(self.module) + ", " + str(self.skip) + ")"
 
 
 class Evaluator:
@@ -260,13 +250,7 @@ class FAMLINN(NeuralNetwork):
 
     def isSampleModule(self, module: nn.Module):
         return (isinstance(module, Evaluator)
-                or isinstance(module, TorchTensorTo1D)
-                or isinstance(module, TorchTensorSkipModule)
-                or isinstance(module, TorchTensorCat)
-                or isinstance(module, TorchTensorAdd)
-                or isinstance(module, TorchTensorFlatten)
-                or isinstance(module, TorchTensorSmartView)
-                or isinstance(module, TorchTensorSmartReshape)
+                or isinstance(module, FamlinnTensorOperation)
                 or isinstance(module, nn.Conv2d)
                 or isinstance(module, nn.ConvTranspose2d)
                 or isinstance(module, nn.BatchNorm1d)
@@ -299,7 +283,6 @@ class FAMLINN(NeuralNetwork):
                            str(net))
             return
         trace = torch.jit.trace(net, *argValues).graph
-        # print(trace)
         nodes_map = {}
         result_map = {}
         name_map = {}
@@ -318,7 +301,6 @@ class FAMLINN(NeuralNetwork):
                             firstArg = inps[0]
                             result_map[firstArg] = argValues[0]
                             nodes_map[firstArg] = self.storage.output_id() if argStorage is None else argStorage[0]
-                            # print("Node first ", firstArg, nodes_map[firstArg])
                             argv = argValues
                             args = [nodes_map[firstArg]]
                         else:
@@ -330,7 +312,7 @@ class FAMLINN(NeuralNetwork):
 
     def hook_net(self, net: nn.Module, arg):
         self._convert(net, [arg])
-        self.pprint()
+        # self.pprint()
 
     def export(self, output_src: str, output_weights: str):
         codegen = CodeGen(output_src)

@@ -93,11 +93,6 @@ def test(seed, arg=torch.randn(1, 3, 224, 224)):
 
 def test_gen(seed, arg=torch.randn(1, 3, 224, 224)):
     import examples.resources.vgg19.src
-    n = examples.vgg19.vgg19.VGG(VGG_types['VGG19'])
-    seed()
-    resOrig = n(arg)
-    # print("Original: ", resOrig)
-
     nRead = examples.resources.vgg19.src.Net()
     nRead.read('D:\\ITMO\\FAMLINN\\examples\\resources\\vgg19\\weights')
     seed()
@@ -110,6 +105,5 @@ def test_gen(seed, arg=torch.randn(1, 3, 224, 224)):
     seed()
     resFamlinn = famlinn.eval(arg)
     # print("FamlinnRead: ", resFamlinn)
-    # assert torch.equal(resOrig, resR), str(resOrig) + str(resR)
     assert torch.equal(resR, resFamlinn), str(resR) + str(resFamlinn)
-    print("TEST_WEIGHTS_VGG19: OK(", resOrig.view(-1)[0], resR.view(-1)[0], resFamlinn.view(-1)[0], ')')
+    print("TEST_WEIGHTS_VGG19: OK(", resR.view(-1)[0], resFamlinn.view(-1)[0], ')')

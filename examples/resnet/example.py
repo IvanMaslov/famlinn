@@ -28,11 +28,6 @@ def test(seed, arg=torch.randn(1, 3, 224, 224)):
 
 def test_gen(seed, arg=torch.randn(1, 3, 224, 224)):
     import examples.resources.resnet.src
-    n = examples.resnet.resnet.ResNet101()
-    seed()
-    resOrig = n(arg)
-    # print("Original: ", resOrig)
-
     nRead = examples.resources.resnet.src.Net()
     nRead.read('D:\\ITMO\\FAMLINN\\examples\\resources\\resnet\\weights')
     seed()
@@ -45,9 +40,8 @@ def test_gen(seed, arg=torch.randn(1, 3, 224, 224)):
     seed()
     resFamlinn = famlinn.eval(arg)
     # print("FamlinnRead: ", resFamlinn)
-    # assert torch.equal(resOrig, resR), str(resOrig) + str(resR)
     assert torch.equal(resR, resFamlinn), str(resR) + str(resFamlinn)
-    print("TEST_WEIGHTS_RESNET: OK(", resOrig.view(-1)[0], resR.view(-1)[0], resFamlinn.view(-1)[0], ')')
+    print("TEST_WEIGHTS_RESNET: OK(", resR.view(-1)[0], resFamlinn.view(-1)[0], ')')
 
 
 def bench_onnx(arg):
