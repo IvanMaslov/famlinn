@@ -1,3 +1,5 @@
+import pathlib
+
 import torch
 
 import examples.lenet.lenet
@@ -15,10 +17,10 @@ def test(seed, arg=torch.randn(1, 1, 32, 32)):
     with Perf("MAKE_FAMLINN(lenet)"):
         famlinn.hook_net(n, arg)
     with Perf("SAVE_FAMLINN(lenet)"):
-        famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\lenet\\src.py',
-                       'D:\\ITMO\\FAMLINN\\examples\\resources\\lenet\\weights')
+        famlinn.export(pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\lenet\\src.py'),
+                       pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\lenet\\weights'))
 
-    torch.save(n, 'D:\\ITMO\\FAMLINN\\examples\\resources\\lenet\\original')
+    torch.save(n, pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\lenet\\original'))
     seed()
     with Perf("CALC_FAMLINN(lenet)"):
         resFamlinn = famlinn.eval(arg)

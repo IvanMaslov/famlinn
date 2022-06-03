@@ -8,6 +8,7 @@ from typing import List
 import shutil
 import os
 import sys
+import pathlib
 
 
 class Container:
@@ -139,6 +140,20 @@ class FamlinnTensorOperation(nn.Module):
     pass
 
 
+class FamlinnAtomicModule(nn.Module):
+
+    def __init__(self, module: nn.Module, source: str):
+        super().__init__()
+        self.module = module
+        self.source = source
+
+    def forward(self, *tensor: torch.Tensor) -> torch.Tensor:
+        return self.module(*tensor)
+
+    def __str__(self):
+        return self.source
+
+
 class TorchTensorCat(FamlinnTensorOperation):
 
     def __init__(self, dim):
@@ -224,7 +239,7 @@ class Evaluator:
 
 class CodeGen:
 
-    def __init__(self, output=None):
+    def __init__(self, output: pathlib.Path = None):
         self.output = output
         self.result = []
 
@@ -251,6 +266,7 @@ class FAMLINN(NeuralNetwork):
     def isSampleModule(self, module: nn.Module):
         return (isinstance(module, Evaluator)
                 or isinstance(module, FamlinnTensorOperation)
+                or isinstance(module, FamlinnAtomicModule)
                 or isinstance(module, nn.Conv2d)
                 or isinstance(module, nn.ConvTranspose2d)
                 or isinstance(module, nn.BatchNorm1d)
@@ -314,7 +330,7 @@ class FAMLINN(NeuralNetwork):
         self._convert(net, [arg])
         # self.pprint()
 
-    def export(self, output_src: str, output_weights: str):
+    def export(self, output_src: pathlib.Path, output_weights: pathlib.Path):
         codegen = CodeGen(output_src)
         self.generate(codegen)
         codegen.write()
@@ -371,12 +387,12 @@ class FAMLINN(NeuralNetwork):
         ])
         for i, node in enumerate(self.nodes):
             res_codegen.add_lines([
-                '        self.node_{} = torch.load(weights_path + \'Detailed\\\\node{}\')'.format(i, i)
+                '        self.node_{} = torch.load(weights_path + \'\\\\node{}\')'.format(i, i)
             ])
         return res_codegen
 
-    def write_weights(self, output_weights: str):
-        shutil.rmtree(output_weights + 'Detailed', ignore_errors=True)
-        os.mkdir(output_weights + 'Detailed')
+    def write_weights(self, output_weights: pathlib.Path):
+        shutil.rmtree(output_weights, ignore_errors=True)
+        os.mkdir(output_weights)
         for i, node in enumerate(self.nodes):
-            node.save_params(output_weights + 'Detailed\\node' + str(i))
+            node.save_params(output_weights / ('node' + str(i)))

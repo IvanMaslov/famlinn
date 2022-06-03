@@ -1,3 +1,5 @@
+import pathlib
+
 import torch
 
 import examples.unet.unet
@@ -16,10 +18,10 @@ def test(seed, arg=torch.randn(1, 3, 256, 256)):
     with Perf("MAKE_FAMLINN(unet)"):
         famlinn.hook_net(n, arg)
     with Perf("SAVE_FAMLINN(unet)"):
-        famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\src.py',
-                       'D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\weights')
+        famlinn.export(pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\src.py'),
+                       pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\weights'))
 
-    torch.save(n, 'D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\original')
+    torch.save(n, pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\original'))
     seed()
     with Perf("CALC_FAMLINN(unet)"):
         resFamlinn = famlinn.eval(arg)
@@ -50,14 +52,14 @@ def bench_onnx(arg):
     with Perf("ONNX(unet)"):
         import onnx
         import onnxruntime
-        pth = 'D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\onnx'
+        pth = pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\unet\\onnx')
         with Perf("ONNX_SAVE(unet)"):
             nOnnx = torch.onnx.export(n, arg, pth)
         with Perf("ONNX_LOAD_CHECK(unet)"):
-            nOnnx = onnx.load(pth)
+            nOnnx = onnx.load(str(pth))
             onnx.checker.check_model(nOnnx)
         with Perf("ONNX_LOAD_RUN(unet)"):
-            ort_session = onnxruntime.InferenceSession(pth)
+            ort_session = onnxruntime.InferenceSession(str(pth))
             def to_numpy(tensor):
                 return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
             ort_inputs = {ort_session.get_inputs()[0].name: to_numpy(arg)}

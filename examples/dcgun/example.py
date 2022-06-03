@@ -1,3 +1,5 @@
+import pathlib
+
 import torch
 
 import examples.dcgun.dcgun
@@ -31,8 +33,8 @@ def example_generator():
     resFamlinn = famlinn.eval(arg)
     print("Famlinn: ", resFamlinn)
 
-    famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\tmp.py',
-                   'D:\\ITMO\\FAMLINN\\examples\\resources\\weights')
+    famlinn.export(pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\tmp.py'),
+                   pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\weights'))
 
 
 def test_generator(seed, arg=torch.randn(10, 100)):
@@ -43,8 +45,8 @@ def test_generator(seed, arg=torch.randn(10, 100)):
 
     famlinn = src.famlinn.FAMLINN()
     famlinn.hook_net(n, arg)
-    famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\gGun\\src.py',
-                   'D:\\ITMO\\FAMLINN\\examples\\resources\\gGun\\weights')
+    famlinn.export(pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\gGun\\src.py'),
+                   pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\gGun\\weights'))
 
     seed()
     resFamlinn = famlinn.eval(arg)
@@ -78,8 +80,8 @@ def test_discriminator(seed, arg=torch.randn(1, 1, 28, 28)):
 
     famlinn = src.famlinn.FAMLINN()
     famlinn.hook_net(n, arg)
-    famlinn.export('D:\\ITMO\\FAMLINN\\examples\\resources\\dGun\\src.py',
-                   'D:\\ITMO\\FAMLINN\\examples\\resources\\dGun\\weights')
+    famlinn.export(pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\dGun\\src.py'),
+                   pathlib.Path('D:\\ITMO\\FAMLINN\\examples\\resources\\dGun\\weights'))
 
     seed()
     resFamlinn = famlinn.eval(arg)
